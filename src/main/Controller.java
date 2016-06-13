@@ -130,8 +130,8 @@ public class Controller implements Initializable{
 
                     System.out.println("POINTS: " + pts);
                     System.out.println("ATERRRROUUUUU");
-                    fitness += (1000 + Math.random()) / penalty;
-                    fitness += pts;
+                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel()*10 + Math.random()*10) / penalty;
+                    fitness += pts*33.3;
                 }
                 else {
 
