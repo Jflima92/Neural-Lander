@@ -82,7 +82,7 @@ public class SpaceShip {
         return ended;
     }
     public boolean hasEndedVerification(){
-        if(hasFinished() || hasCrashed() || player.getCurrentState().isOutOfBounds()){
+        if(hasFinished() || hasCrashed() || player.getCurrentState().isOutOfBounds() || player.getCurrentState().getFuel() <= 0){
             return true;
         }
         return false;
@@ -90,7 +90,7 @@ public class SpaceShip {
 
     public boolean hasFinished(){
         State st = player.getCurrentState();
-        if(st.getRotate() == 0 && st.gethSpeed() <= 20 && st.getvSpeed() <= 40 && hasLanded(st)){
+        if(st.getRotate() == 0 && st.gethSpeed() <= 20 && st.getvSpeed() <= 40 && hasLanded()){
             return true;
         }
         return false;
@@ -122,17 +122,18 @@ public class SpaceShip {
 
     public boolean isinLandingZone(){
         State st = player.getCurrentState();
-        if(hasLanded(st)){
+        if(hasLanded()){
             return true;
         }
         return false;
     }
 
-    public boolean hasLanded(State st){
+    public boolean hasLanded(){
+        State st = player.getCurrentState();
         System.out.println("HAS LANDED REC Y: " + st.getY());
         ArrayList<Pair> landing = player.getLandingZone();
         if(st.getX() <= (int)landing.get(1).getKey() && st.getX() >= (int)landing.get(0).getKey()){
-            if(st.getY() >= (int) landing.get(0).getValue()-200 || st.getY() <= (int) landing.get(0).getValue()+200) {
+            if(st.getY() >= ((int) landing.get(0).getValue())-200 && st.getY() <= ((int) landing.get(0).getValue())+200) {
                 return true;
             }
         }
@@ -163,7 +164,7 @@ public class SpaceShip {
         }
 
         //rotation = Math.toDegrees(output.get(0));
-        rotation = -180 * output.get(0) + 90;
+        rotation = Math.round(-180 * output.get(0) + 90);
         power = Math.round(output.get(1)/0.25);
 
         actions.put(rotation, power);

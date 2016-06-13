@@ -22,10 +22,10 @@ public class NNGeneticAlgorithm {
     private double averageFitness;
     private double worstFitness;
     private int fittestGenome;
-    public static double mutationRate = 0.1;
+    public static double mutationRate = 0.2;
     public static double crossoverRate = 0.7;
     private static double maxPerturbation = 0.4;
-    private static int numElite = 2;
+    private static int numElite = 3;
     private static int numEliteCopies = 2;
     private int generation;
     private Random rand = new Random();
@@ -52,14 +52,19 @@ public class NNGeneticAlgorithm {
         }
     }
 
-    public void mutate(ArrayList<Double> chromo){
+    public ArrayList<Double> mutate(ArrayList<Double> chromo){
+        ArrayList<Double> ch = new ArrayList<>();
         for(int i = 0; i < chromo.size(); i++){
             if(ThreadLocalRandom.current().nextFloat() < mutationRate){
                 double d = chromo.get(i);
                 d += (getRandomClamped() * maxPerturbation);
-                chromo.set(i, d);
+                ch.add(i, d);
             }
+            else
+                ch.add(i, chromo.get(i));
         }
+
+        return ch;
     }
 
     public Genome getChromosomeRoulette(){
@@ -83,7 +88,6 @@ public class NNGeneticAlgorithm {
     }
 
     public Pair crossover(ArrayList<Double> mum, ArrayList<Double> dad){
-        System.out.println("AFTER ROULETE: " + mum.size());
         ArrayList<Double> baby1 = new ArrayList<>(mum.size());
         ArrayList<Double> baby2 = new ArrayList<>(mum.size());
         Pair toSend = null;
@@ -114,7 +118,6 @@ public class NNGeneticAlgorithm {
         reset();
 
 
-        //TODO MISSING SORT
         Collections.sort(population, (s1, s2) -> {
             int fit1 = (int) s1.getFitness();
             int fit2 = (int) s2.getFitness();
@@ -147,10 +150,10 @@ public class NNGeneticAlgorithm {
             Pair offsprings = crossover(mum.getWeights(),dad.getWeights());
             ArrayList<Double> baby = (ArrayList<Double>)offsprings.getKey();
 
-            mutate(baby);
+            baby = mutate(baby);
             newPop.add(new Genome(baby, 0));
             baby = (ArrayList<Double>)offsprings.getValue();
-            mutate(baby);
+            baby = mutate(baby);
             newPop.add(new Genome(baby, 0));
         }
         population = newPop;

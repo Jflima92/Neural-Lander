@@ -115,12 +115,17 @@ public class Controller implements Initializable{
 
                 double fitness = 0;
 //                    fitness -=  (double) brains.get(i).getRelativeDistance().getValue();
-                System.out.println("Y: " + brains.get(i).getPlayer().getCurrentState().getY() + " landed: " + brains.get(i).hasLanded(brains.get(i).getPlayer().getCurrentState()));
-                double getDiffVV = Math.abs(Double.valueOf(40) - brains.get(i).getPlayer().getCurrentState().getvSpeed());
-                double getDiffHV = Math.abs(Double.valueOf(20) - brains.get(i).getPlayer().getCurrentState().gethSpeed());
-                double penalty = (getDiffHV + getDiffVV);
+                System.out.println("Y: " + brains.get(i).getPlayer().getCurrentState().getY() + " landed: " + brains.get(i).hasLanded());
+                double getDiffVV = 0;
+                if(!(Math.abs(brains.get(i).getPlayer().getCurrentState().getvSpeed()) <= Math.abs(Double.valueOf(40))))
+                    getDiffVV = Math.abs(Double.valueOf(40) - Math.abs(brains.get(i).getPlayer().getCurrentState().getvSpeed()));
+                double getDiffHV = 0;
+                if(!(Math.abs(brains.get(i).getPlayer().getCurrentState().gethSpeed()) <= Math.abs(Double.valueOf(20))))
+                    getDiffHV = Math.abs(Double.valueOf(20) - Math.abs(brains.get(i).getPlayer().getCurrentState().gethSpeed()));
 
-                if(brains.get(i).hasLanded(brains.get(i).getPlayer().getCurrentState())){
+                double penalty = (getDiffHV + getDiffVV) + 10 *Math.abs(brains.get(i).getPlayer().getCurrentState().getRotate());
+
+                if(brains.get(i).hasLanded()){
                     int pts = getLandingScore(brains.get(i));
 
                     System.out.println("POINTS: " + pts);
@@ -131,7 +136,7 @@ public class Controller implements Initializable{
                 else {
 
                     System.out.println("penalty: " + penalty);
-                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel() + Math.random()) / (brains.get(i).getDistance() + penalty);
+                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel() + Math.random())*10 / (brains.get(i).getDistance() + penalty);
 //                    fitness += pts/4;
                 }
                 /*if(!brains.get(i).getPlayer().getCurrentState().isOutOfBounds() || !brains.get(i).hasCrashed()) {
