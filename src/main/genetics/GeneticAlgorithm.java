@@ -61,13 +61,6 @@ public class GeneticAlgorithm {
             // Add the newPool back to the old pool
             pool.addAll(newPool);
 
-            /*for(int i = 0; i < newPool.size(); i++) {
-                System.out.println("CHROMO " + Integer.toString(i + 1) + " - " + newPool.get(i).toString());
-            }*/
-
-           /* for(int i = 0; i < pool.size(); i++){
-                System.out.println("CHROMO " + Integer.toString(i+1) + " - " + pool.get(i).toString());
-            }*/
         }
     }
 

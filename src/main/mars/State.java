@@ -18,7 +18,7 @@ public class State {
 
     }
 
-    public State(int x, int y, double vSpeed, double hSpeed, int fuel, double rotate, double power) {
+    public State(int x, int y, double hSpeed, double vSpeed, int fuel, double rotate, double power) {
         this.x = x;
         this.y = y;
         this.vSpeed = vSpeed;

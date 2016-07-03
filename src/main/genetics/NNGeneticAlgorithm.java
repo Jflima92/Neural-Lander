@@ -22,7 +22,7 @@ public class NNGeneticAlgorithm {
     private double averageFitness;
     private double worstFitness;
     private int fittestGenome;
-    public static double mutationRate = 0.2;
+    public static double mutationRate = 0.15;
     public static double crossoverRate = 0.7;
     private static double maxPerturbation = 0.4;
     private static int numElite = 3;
@@ -157,7 +157,7 @@ public class NNGeneticAlgorithm {
             newPop.add(new Genome(baby, 0));
         }
         population = newPop;
-        System.out.println("RETURNING NEW POP : " + population.size() + " - " + popSize);
+
         return newPop;
     }
 
@@ -281,7 +281,6 @@ public class NNGeneticAlgorithm {
 
         for (int i=0; i<popSize; ++i)
         {
-            //System.out.println("FITNESS FROM POP " + i + " - " + population.get(i).getFitness());
             //update fittest if necessary
             if (population.get(i).getFitness() > HighestSoFar)
             {

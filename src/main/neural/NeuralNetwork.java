@@ -15,9 +15,9 @@ public class NeuralNetwork {
 
     public NeuralNetwork(){
         //Initialize parameters, default for starters
-        this.numInputs = 4;
-        this.numHiddenLayers = 1;
-        this.neuronsPerLayer = 6;
+        this.numInputs = 6;
+        this.numHiddenLayers = 5;
+        this.neuronsPerLayer = 10;
         this.numOutputs = 2;
         this.CreateNetwork();
     }

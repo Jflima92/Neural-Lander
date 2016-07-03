@@ -10,7 +10,9 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -21,7 +23,12 @@ import main.mars.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Controller implements Initializable{
@@ -39,6 +46,10 @@ public class Controller implements Initializable{
     private ArrayList<Double> bestFitness; //per gen
     private int numticks;
     private State initialState;
+    private double compBest = 0;
+    private SpaceShip bestShip;
+    private ArrayList<Pair> bestActions;
+
 
     @FXML
     private Stage mainStage;
@@ -53,7 +64,13 @@ public class Controller implements Initializable{
     private LineChart lineChart;
 
     @FXML
-    private Button startButton, runGeneration;
+    private ChoiceBox sceneList;
+
+    @FXML
+    private Button startButton, runGeneration, printPath, updateScenarioButton, validateSpaceshipsButton;
+
+    @FXML
+    private RadioButton toggleScenario1, toggleScenario2, toggleScenario3,toggleScenario4;
 
 
 
@@ -64,7 +81,7 @@ public class Controller implements Initializable{
         yAxis.setUpperBound(1);
         yAxis.setTickUnit(0.1);
 
-
+        this.bestActions = new ArrayList<>();
         this.population = new ArrayList<>();
         this.brains = new ArrayList<>();
         this.points = new ArrayList<>();
@@ -75,33 +92,20 @@ public class Controller implements Initializable{
         this.initializeDir("src/main/mars/tc1.txt");
         this.startButton.setOnAction(this::handleStartButtonAction);
         this.runGeneration.setOnAction(this::handleRunButtonAction);
+        this.printPath.setOnAction(this::handlePrintButtonAction);
+        this.updateScenarioButton.setOnAction(this::handleUpdateScenarioButton);
+        this.validateSpaceshipsButton.setOnAction(this::handleValidateSpaceshipsButton);
 
         addTerrain();
-
-
-        /*Engine engine = new Engine("src/main/mars/tc1.txt");
-
-        ArrayList<HashMap<Integer, Integer>> best = engine.getBest();
-        ArrayList<Pair> terrain = engine.getTerrain();
-
-        XYChart.Series series = new XYChart.Series();
-        series.setName("Attempt 1");
-
-        for(int i = 0; i< best.size(); i++){
-            for(Map.Entry e: best.get(i).entrySet()){
-                series.getData().add(new XYChart.Data((int)e.getKey(), e.getValue()));
-            }
-        }
-
-
-  */
     }
+
+
 
     public void runGeneration(){
         int u = 0;
+        this.bestActions = new ArrayList<>();
 
-
-        System.out.println("entering round: " + u);
+        System.out.println("Round: " + u);
         for (int i = 0; i < brains.size(); i++) {
 
             while(!brains.get(i).getEnded()){
@@ -114,8 +118,7 @@ public class Controller implements Initializable{
                 }
 
                 double fitness = 0;
-//                    fitness -=  (double) brains.get(i).getRelativeDistance().getValue();
-                System.out.println("Y: " + brains.get(i).getPlayer().getCurrentState().getY() + " landed: " + brains.get(i).hasLanded());
+//
                 double getDiffVV = 0;
                 if(!(Math.abs(brains.get(i).getPlayer().getCurrentState().getvSpeed()) <= Math.abs(Double.valueOf(40))))
                     getDiffVV = Math.abs(Double.valueOf(40) - Math.abs(brains.get(i).getPlayer().getCurrentState().getvSpeed()));
@@ -127,47 +130,37 @@ public class Controller implements Initializable{
 
                 if(brains.get(i).hasLanded()){
                     int pts = getLandingScore(brains.get(i));
-
-                    System.out.println("POINTS: " + pts);
-                    System.out.println("ATERRRROUUUUU");
-                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel()*10 + Math.random()*10) / penalty;
+                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel()*10) / penalty;
                     fitness += pts*33.3;
                 }
                 else {
+                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel())*10 / (brains.get(i).getDistance() + penalty);
+                }
 
-                    System.out.println("penalty: " + penalty);
-                    fitness += (brains.get(i).getPlayer().getCurrentState().getFuel() + Math.random())*10 / (brains.get(i).getDistance() + penalty);
-//                    fitness += pts/4;
-                }
-                /*if(!brains.get(i).getPlayer().getCurrentState().isOutOfBounds() || !brains.get(i).hasCrashed()) {
-                    System.out.println("OR");
-                    fitness += brains.get(i).getPlayer().getCurrentState().getFuel() + Math.random();
-                }
-                else if(!brains.get(i).getPlayer().getCurrentState().isOutOfBounds() && !brains.get(i).hasCrashed()) {
-                    fitness += brains.get(i).getPlayer().getCurrentState().getFuel() + Math.random();
-                    System.out.println("AND");
-                }
-                else {
-                    System.out.println("CRASHED OR OUT");
-                    fitness = 0;
-                }*/
-                System.out.println("UPDATING FITNESS: " + fitness);
+
+
+
                 gen.getPopulation().get(i).setFitness(fitness);
 
                 brains.get(i).setFitness(fitness);
                 population.get(i).setFitness(fitness);
 
             }
-            System.out.println("FINISHED " + i + " ship - " + brains.get(i).getPlayer().getCurrentState());
+
+            if(brains.get(i).getFitness() > compBest){
+                compBest = brains.get(i).getFitness();
+                bestShip = brains.get(i);
+            }
         }
 
+        ArrayList<Pair> output = bestShip.getActions();
+        this.bestActions = output;
+        System.out.println("CHANGED BEST FITNESS: "  + i + " - " + bestShip.getFitness());
         System.out.println("ENDED GENERATION " + generations);
         gen_.setText((Integer.toString(generations)));
         for (int v = 0; v < brains.size(); v++) {
             System.out.println("brain: " + v + " - " + brains.get(v).getPlayer().getCurrentState());
-            System.out.println("fitness: " + brains.get(v).getFitness());
-            System.out.println("CRASHED: " + brains.get(v).hasCrashed());
-
+            System.out.println("fitness: " + brains.get(v).getFitness());System.out.println("CRASHED: " + brains.get(v).hasCrashed());
             int finalV = v;
             Task task = new Task<Void>() {
                 @Override public Void call() {
@@ -215,7 +208,8 @@ public class Controller implements Initializable{
             brains.get(t).reset(initialState);
         }
 
-        u = 0;
+//        System.out.println("SUPP: " + output);
+        compBest = 0;
 
     }
 
@@ -248,12 +242,38 @@ public class Controller implements Initializable{
     private void handleStartButtonAction(ActionEvent actionEvent) {
         int u = 0;
         int x = 0;
-        while(x++ != 20) {
-
+        while(x++ != 1500) {
+            lineChart.getData().clear();
+            addTerrain();
             runGeneration();
+        }
+    }
 
+    private void handlePrintButtonAction(ActionEvent actionEvent) {
+        System.out.println("BEST FITNESS IS : " + gen.getBestFitness());
+//        System.out.println("actions: " + this.bestActions);
+        List<String> lns = new ArrayList<>();
+
+//        List<String> lines = Arrays.asList(arr, "The second line");
+        System.out.println("SIZE: " + this.bestActions.size());
+
+        String arr = new String("ArrayList<Pair> actions = new ArrayList<>();");
+        lns.add(arr);
+        for(int i = 0; i < bestActions.size(); i++){
+            double rotation = (double) bestActions.get(i).getKey();
+            double power = (double)bestActions.get(i).getValue();
+            String pair = new String("new Pair(" + Integer.valueOf(Double.valueOf(rotation).intValue()) + ", " + Integer.valueOf(Double.valueOf(power).intValue())+")");
+            String st = new String("actions.add(" + pair + ");");
+            lns.add(st);
 
         }
+        Path file = Paths.get("actions.txt");
+        try {
+            Files.write(file, lns, Charset.forName("UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void handleRunButtonAction(ActionEvent actionEvent) {
@@ -262,6 +282,22 @@ public class Controller implements Initializable{
         lineChart.getData().clear();
         addTerrain();
         runGeneration();
+    }
+
+    private void handleUpdateScenarioButton(ActionEvent actionEvent) {
+        if (toggleScenario1.isSelected()){
+            updateScenario(1);
+        } else if (toggleScenario2.isSelected()){
+            updateScenario(2);
+        } else if (toggleScenario3.isSelected()){
+            updateScenario(3);
+        } else if (toggleScenario4.isSelected()){
+            updateScenario(4);
+        }
+    }
+
+    public void handleValidateSpaceshipsButton(ActionEvent actionEvent){
+
     }
 
     public void initializeDir(String dir){
@@ -286,10 +322,11 @@ public class Controller implements Initializable{
 
         this.player = new Player(points);
         this.initialState = new State(in.nextInt(), in.nextInt(), in.nextDouble(), in.nextDouble(), in.nextInt(), in.nextDouble(), in.nextDouble());
+        System.out.println(initialState.gethSpeed());
         this.player.setCurrentState(initialState);
         System.out.println("landing zone: " + this.player.getLandingZone());
 
-        for(int i = 0; i < 10; i++){
+        for(int i = 0; i < 16; i++){
             Player p = new Player(points);
             p.setCurrentState(initialState);
             brains.add(new SpaceShip(p));
@@ -303,6 +340,64 @@ public class Controller implements Initializable{
         }
 
         System.out.println(surfaceN + " - " + points);
+    }
+
+    public void updateScenario(int scenario){
+        Scanner in = null;
+        String dir = "";
+        System.out.println("chosen: " + scenario);
+        switch (scenario){
+            case 1:
+                dir = "src/main/mars/tc1.txt";
+                break;
+            case 2:
+                dir = "src/main/mars/tc2.txt";
+                break;
+            case 3:
+                dir = "src/main/mars/tc3.txt";
+                break;
+            case 4:
+                dir = "src/main/mars/tc4.txt";
+                break;
+        }
+
+        try {
+            File file = new File(dir);
+            in = new Scanner(new FileInputStream(file));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        points.clear();
+
+        int surfaceN = in.nextInt(); // the number of points used to draw the surface of Mars.
+        for (int j = 0; j < surfaceN; j++) {
+            int landX = in.nextInt(); // X coordinate of a surface point. (0 to 6999)
+            int landY = in.nextInt(); // Y coordinate of a surface point. By linking all the points together in a sequential fashion, you form the surface of Mars.
+            Pair p = new Pair(landX, landY);
+            points.add(p);
+        }
+
+        System.out.println("new terrain: " + points);
+
+        this.initialState = new State(in.nextInt(), in.nextInt(), in.nextDouble(), in.nextDouble(), in.nextInt(), in.nextDouble(), in.nextDouble());
+        for(SpaceShip spc: brains){
+            spc.getPlayer().setPoints(points);
+            spc.getPlayer().setCurrentState(initialState);
+        }
+
+        updateTerrain(scenario);
+
+    }
+
+    public void updateTerrain(int scenario){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                lineChart.getData().clear();
+            }
+        });
+        addTerrain();
     }
 
 
@@ -327,15 +422,12 @@ public class Controller implements Initializable{
     public int getLandingScore(SpaceShip sc) {
         int i = 0;
         if(sc.isLandingHSpeed()) {
-            System.out.println("HSPEED");
             i++;
         }
         if(sc.isLandingVSpeed()) {
-            System.out.println("VSPEED");
             i++;
         }
         if(sc.isLandingRotation()) {
-            System.out.println("ROTATION");
             i++;
         }
 

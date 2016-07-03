@@ -16,7 +16,7 @@ public class SpaceShip {
     private double rotation;
     private double power;
     private ArrayList<Pair> path;
-    private HashMap<Double, Double> actions;
+    private ArrayList<Pair> actions;
     private boolean valid;
     private boolean ended;
 
@@ -34,8 +34,7 @@ public class SpaceShip {
         this.path = new ArrayList<>();
         Pair m = new Pair(player.getCurrentState().getX(), player.getCurrentState().getY());
         path.add(m);
-        System.out.println("initial path: " + path);
-        this.actions = new HashMap<>();
+        this.actions = new ArrayList<>();
     }
 
     public Player getPlayer() {
@@ -130,7 +129,7 @@ public class SpaceShip {
 
     public boolean hasLanded(){
         State st = player.getCurrentState();
-        System.out.println("HAS LANDED REC Y: " + st.getY());
+
         ArrayList<Pair> landing = player.getLandingZone();
         if(st.getX() <= (int)landing.get(1).getKey() && st.getX() >= (int)landing.get(0).getKey()){
             if(st.getY() >= ((int) landing.get(0).getValue())-200 && st.getY() <= ((int) landing.get(0).getValue())+200) {
@@ -152,10 +151,15 @@ public class SpaceShip {
     public boolean update(){
         State st = player.getCurrentState();
         ArrayList<Double> inputs = new ArrayList<>();
-        inputs.add(getDistance());
+
+        inputs.add(normalizeDist(getXDist(), 0));
+        inputs.add(normalizeDist(getYDist(), 1));
+
         inputs.add(st.getvSpeed());
         inputs.add(st.gethSpeed());
+
         inputs.add(st.getPower());
+        inputs.add(st.getRotate());
 
         ArrayList<Double> output = brain.update(inputs);
 
@@ -164,10 +168,11 @@ public class SpaceShip {
         }
 
         //rotation = Math.toDegrees(output.get(0));
+
         rotation = Math.round(-180 * output.get(0) + 90);
         power = Math.round(output.get(1)/0.25);
 
-        actions.put(rotation, power);
+        actions.add(new Pair(rotation, power));
 
         State prev = this.player.getCurrentState().clone();
 
@@ -177,17 +182,14 @@ public class SpaceShip {
 
         if(hasEndedVerification()){
             this.player.setCurrentState(prev);
+
             ended = true;
         }else{
+
             Pair m = new Pair(this.player.getCurrentState().getX(), this.player.getCurrentState().getY());
             this.path.add(m);
-            System.out.println("updated fuel and power " + player.getCurrentState().getFuel() + " - " + player.getCurrentState().getPower());
-        }
-//        }
-//        else
-//            valid = false;
 
-        // System.out.println("UPDATES BRAIN STATE: " + player.getCurrentState());
+        }
 
         return true;
 
@@ -212,7 +214,6 @@ public class SpaceShip {
         double ylimit = 0;
 
         if(point1 == null || point2 == null){
-            System.out.println("iguais");
             return true;
 
         }
@@ -243,10 +244,40 @@ public class SpaceShip {
     public double getDistance(){
         int middle = ((int)player.getLandingZone().get(0).getKey() + (int)player.getLandingZone().get(1).getKey()) / 2;
 
-        return Math.sqrt(Math.pow(player.getCurrentState().getX()-middle, 2) + Math.pow(player.getCurrentState().getY()-(int)player.getLandingZone().get(0).getValue(), 2));
+        return Math.sqrt(Math.pow(Math.abs(player.getCurrentState().getX()-middle), 2) + Math.pow(Math.abs(player.getCurrentState().getY()-(int)player.getLandingZone().get(0).getValue()), 2));
     }
 
-    public HashMap getActions(){
+    public double getXDist(){
+        int middle = ((int)player.getLandingZone().get(0).getKey() + (int)player.getLandingZone().get(1).getKey()) / 2;
+
+        return this.player.getCurrentState().getX() - middle;
+    }
+
+    public double getYDist(){
+        return (int)this.player.getCurrentState().getY() -  (int)player.getLandingZone().get(0).getValue();
+    }
+
+    public double normalizeDist(double dist, int target){
+        double norm;
+        if(target == 0)
+            norm = dist/7000;
+        else
+            norm = dist/3000;
+
+        return norm;
+    }
+
+    public double normalizeVel(double vel, int target){
+        double norm = 0.0;
+        if(target == 0)
+            norm = vel/7000;
+        else
+            norm = vel/3000;
+
+        return norm;
+    }
+
+    public ArrayList<Pair> getActions(){
         return actions;
     }
     public ArrayList<Pair> getPath(){
@@ -260,6 +291,7 @@ public class SpaceShip {
     public void reset(State st){
         player.setCurrentState(st);
         this.ended = false;
+        this.actions = new ArrayList<>();
         this.path = new ArrayList<>();
         fitness = 0;
     }
