@@ -4,7 +4,6 @@ package main.mars;
 import main.neural.NeuralNetwork;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Created by jorgelima on 6/7/16.
